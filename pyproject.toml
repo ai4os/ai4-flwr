@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ai4flwr"
+version = "0.1.0"
+description = "AI4OS extensions to the Python Flower federated learning framework (https://flower.dev)"
+authors = ["Alvaro Lopez Garcia <aloga@ifca.unican.es>"]
+license = "GPL-3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flwr = "^1.6.0"
+grpc = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
