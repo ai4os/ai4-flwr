@@ -23,11 +23,7 @@ import grpc
 class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
     def __init__(self, token) -> None:
         self.token = token
-        log(
-            INFO,
-            "Created AuthMetadataPlugin with token: %s",
-            self.token
-        )
+        log(INFO, "Created AuthMetadataPlugin with token: %s", self.token)
 
     def __call__(self, context, callback):
         callback((("authorization", "Bearer " + self.token),), None)

@@ -24,11 +24,7 @@ import grpc
 class BearerTokenInterceptor(grpc.ServerInterceptor):
     def __init__(self, token=None):
         self.token = token or secrets.token_hex(32)
-        log(
-            INFO,
-            "Configured Bearer token authentication with: '%s'",
-            self.token
-        )
+        log(INFO, "Configured Bearer token authentication with: '%s'", self.token)
 
         def abort(ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
@@ -46,11 +42,7 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
                 break
 
         if auth_token != "Bearer {}".format(self.token):
-            log(
-                ERROR,
-                "Call with invalid token: %s",
-                auth_token
-            )
+            log(ERROR, "Call with invalid token: %s", auth_token)
             return self._abortion
         else:
             return continuation(handler_call_details)
