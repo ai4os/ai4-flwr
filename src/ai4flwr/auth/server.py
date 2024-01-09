@@ -18,6 +18,7 @@
 
 from logging import ERROR, INFO
 import secrets
+import typing
 
 from flwr.common.logger import log
 import grpc
@@ -26,14 +27,14 @@ import grpc
 class BearerTokenInterceptor(grpc.ServerInterceptor):
     """GRPC Server interceptor implementing Bearer token authentication."""
 
-    def __init__(self, token=None):
+    def __init__(self, token: typing.Optional[str] = None):
         """Create a BearerTokenInterceptor object.
 
         :param token: A string containing the Bearer token that will be grant access to
                       the client. If a token is not provided, we will create a random
                       32 bytes hexadecimal string.
         """
-        self.token = token or secrets.token_hex(32)
+        self.token: str = token or secrets.token_hex(32)
         log(INFO, "Configured Bearer token authentication with: '%s'", self.token)
 
         def abort(ignored_request, context):

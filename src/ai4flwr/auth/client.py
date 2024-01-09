@@ -29,12 +29,12 @@ class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
     BearerTokenInterceptor as authentication method.
     """
 
-    def __init__(self, token) -> None:
+    def __init__(self, token: str) -> None:
         """Initialize the plugin with the provided token.
 
         :params token: a string containing the token to be used.
         """
-        self.token = token
+        self.token: str = token
         log(INFO, "Created AuthMetadataPlugin with token: %s", self.token)
 
     def __call__(self, context, callback):
