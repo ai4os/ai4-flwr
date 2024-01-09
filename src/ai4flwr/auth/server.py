@@ -14,6 +14,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+"""GRPC Authentication classes for Flower server."""
+
 from logging import ERROR, INFO
 import secrets
 
@@ -22,7 +24,15 @@ import grpc
 
 
 class BearerTokenInterceptor(grpc.ServerInterceptor):
+    """GRPC Server interceptor implementing Bearer token authentication."""
+
     def __init__(self, token=None):
+        """Create a BearerTokenInterceptor object.
+
+        :param token: A string containing the Bearer token that will be grant access to
+                      the client. If a token is not provided, we will create a random
+                      32 bytes hexadecimal string.
+        """
         self.token = token or secrets.token_hex(32)
         log(INFO, "Configured Bearer token authentication with: '%s'", self.token)
 
@@ -32,6 +42,17 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
         self._abortion = grpc.unary_unary_rpc_method_handler(abort)
 
     def intercept_service(self, continuation, handler_call_details):
+        """Intercept incoming RPCs checking that the provided token is correct.
+
+        :param continuation: A  function that takes a HandlerCallDetails and proceeds to
+                             invoke the next interceptor in the chain, if any, or the
+                             RPC handler lookup logic, with the call details passed as
+                             an argument, and returns an RpcMethodHandler instance if
+                             the RPC is considered serviced, or None otherwise.
+        :param handler_call_details: A HandlerCallDetails describing the RPC.
+
+        :returns: Either the continuation (if token is correct) or an abortion.
+        """
         if handler_call_details.method.endswith("Unauthenticated"):
             return continuation(handler_call_details)
 
