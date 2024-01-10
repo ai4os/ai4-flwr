@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai4flwr"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI4OS extensions to the Python Flower federated learning framework (https://flower.dev)"
 authors = ["Alvaro Lopez Garcia <aloga@ifca.unican.es>"]
 license = "GPL-3"
