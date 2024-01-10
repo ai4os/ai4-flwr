@@ -68,3 +68,29 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
             return self._abortion
         else:
             return continuation(handler_call_details)
+
+
+class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
+    """A Bearer token auth plugin for Flower clients.
+
+    This class should be used againsg a Flower server that is configured with the
+    BearerTokenInterceptor as authentication method.
+    """
+
+    def __init__(self, token: str) -> None:
+        """Initialize the plugin with the provided token.
+
+        :params token: a string containing the token to be used.
+        """
+        self.token: str = token
+        log(INFO, "Created AuthMetadataPlugin with token: %s", self.token)
+
+    def __call__(self, context, callback):
+        """Implement authentication by passing metadata to a callback.
+
+        :context: An AuthMetadataContext providing information on the RPC that the
+                  plugin is being called to authenticate.
+        :callback: An AuthMetadataPluginCallback to be invoked either synchronously or
+                   asynchronously.
+        """
+        callback((("authorization", "Bearer " + self.token),), None)
