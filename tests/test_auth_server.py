@@ -55,21 +55,31 @@ def continuation():
 
 def test_empty_token():
     interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
-    assert isinstance(interceptor.token, str)
-    assert len(interceptor.token) == 64
+    assert isinstance(interceptor.tokens[0], str)
+    assert len(interceptor.tokens[0]) == 64
 
 
 def test_provided_token():
     interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("foobar")
-    assert isinstance(interceptor.token, str)
-    assert len(interceptor.token) == 6
-    assert interceptor.token == "foobar"
+    assert isinstance(interceptor.tokens[0], str)
+    assert len(interceptor.tokens[0]) == 6
+    assert interceptor.tokens[0] == "foobar"
+
+
+def test_provided_various_tokens():
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("foobar", "barbaz")
+    assert isinstance(interceptor.tokens[0], str)
+    assert isinstance(interceptor.tokens[1], str)
+    assert len(interceptor.tokens[0]) == 6
+    assert len(interceptor.tokens[1]) == 6
+    assert interceptor.tokens[0] == "foobar"
+    assert interceptor.tokens[1] == "barbaz"
 
 
 def test_unauthenticated(mock_handler_call_details_unauthenticated, continuation):
     interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
-    assert isinstance(interceptor.token, str)
-    assert len(interceptor.token) == 64
+    assert isinstance(interceptor.tokens[0], str)
+    assert len(interceptor.tokens[0]) == 64
 
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_unauthenticated)
@@ -78,8 +88,8 @@ def test_unauthenticated(mock_handler_call_details_unauthenticated, continuation
 
 def test_authenticated_not_ok(mock_handler_call_details_authenticated, continuation):
     interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
-    assert isinstance(interceptor.token, str)
-    assert len(interceptor.token) == 64
+    assert isinstance(interceptor.tokens[0], str)
+    assert len(interceptor.tokens[0]) == 64
 
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_authenticated)
@@ -88,7 +98,16 @@ def test_authenticated_not_ok(mock_handler_call_details_authenticated, continuat
 
 def test_authenticated_ok(mock_handler_call_details_authenticated, continuation):
     interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("foobar")
-    assert isinstance(interceptor.token, str)
+    assert isinstance(interceptor.tokens[0], str)
+
+    ret = interceptor.intercept_service(continuation,
+                                        mock_handler_call_details_authenticated)
+    assert ret == "Ok"
+
+
+def test_authenticated_ok2(mock_handler_call_details_authenticated, continuation):
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("barbaz", "foobar")
+    assert isinstance(interceptor.tokens[0], str)
 
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_authenticated)
