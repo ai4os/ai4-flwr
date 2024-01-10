@@ -27,15 +27,15 @@ import grpc
 class BearerTokenInterceptor(grpc.ServerInterceptor):
     """GRPC Server interceptor implementing Bearer token authentication."""
 
-    def __init__(self, token: typing.Optional[str] = None):
+    def __init__(self, *tokens: typing.Optional[str]):
         """Create a BearerTokenInterceptor object.
 
-        :param token: A string containing the Bearer token that will be grant access to
-                      the client. If a token is not provided, we will create a random
-                      32 bytes hexadecimal string.
+        :param *tokens: One or more strings containing the Bearer tokens that will grant
+                        access to the client. If a token is not provided, we will create
+                        a random 32 bytes hexadecimal string.
         """
-        self.token: str = token or secrets.token_hex(32)
-        log(INFO, "Configured Bearer token authentication with: '%s'", self.token)
+        self.tokens = [t for t in tokens] or [secrets.token_hex(32)]
+        log(INFO, "Configured Bearer token authentication with: '%s'", self.tokens)
 
         def abort(ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
@@ -63,11 +63,14 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
                 auth_token = kv.value
                 break
 
-        if auth_token != "Bearer {}".format(self.token):
-            log(ERROR, "Call with invalid token: %s", auth_token)
-            return self._abortion
-        else:
-            return continuation(handler_call_details)
+        if auth_token.startswith("Bearer "):
+            auth_token = auth_token[7:]
+
+            if auth_token in self.tokens:
+                return continuation(handler_call_details)
+
+        log(ERROR, "Call with invalid token: '%s'", auth_token)
+        return self._abortion
 
 
 class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
