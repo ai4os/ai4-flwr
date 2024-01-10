@@ -18,7 +18,7 @@
 
 import pytest
 
-import ai4flwr.auth.client as client
+import ai4flwr.auth.bearer
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def mock_callback():
 
 
 def test_client_with_token(mock_context, mock_callback):
-    plugin = client.BearerTokenAuthPlugin("foobar")
+    plugin = ai4flwr.auth.bearer.BearerTokenAuthPlugin("foobar")
     assert isinstance(plugin.token, str)
     assert plugin.token == "foobar"
 

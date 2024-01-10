@@ -21,24 +21,24 @@ Authentication for Flower is implemented directly via GRPC: interceptors
 (server side) and authentication medatata plugins (client side).
 
 In order to use it, the server must be initialized with any object of the
-`ai4flwr.auth.server` module as interceptor. See the examples below for more
+`ai4flwr.auth` package as interceptor. See the examples below for more
 details.
 
 ### Bearer token authentication
 
 In your server, start it as follows:
 
-    import ai4flwr.auth.server
+    import ai4flwr.auth.bearer
 
     fl.server.start_server(
         server_address="0.0.0.0:5000",
         certificates=(...),
-        interceptors=[ai4flwr.auth.server.BearerTokenInterceptor()]
+        interceptors=[ai4flwr.auth.bearer.BearerTokenInterceptor()]
     )
 
 In your client, start it as follows:
 
-    import ai4flwr.auth.client
+    import ai4flwr.auth.bearer
 
     token = "Your token as configured in the server"
 
@@ -47,6 +47,6 @@ In your client, start it as follows:
         client=...,
         root_certificates=...
         call_credentials=grpc.metadata_call_credentials(
-            ai4flwr.auth.client.BearerTokenAuthPlugin(token)
+            ai4flwr.auth.bearer.BearerTokenAuthPlugin(token)
         ),
     )
