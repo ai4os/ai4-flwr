@@ -50,3 +50,17 @@ In your client, start it as follows:
             ai4flwr.auth.bearer.BearerTokenAuthPlugin(token)
         ),
     )
+
+## Examples
+
+The `examples/` file contains additional examples. In order to run them you must first generate the certificates for the server:
+
+    ./examples/certificates/generate.sh
+
+Then run the server with:
+
+    poetry run examples/bearer_server.py mytoken
+
+And the client(s) with:
+
+    poetry run examples/client.py mytoken
