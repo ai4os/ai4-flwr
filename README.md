@@ -64,3 +64,13 @@ Then run the server with:
 And the client(s) with:
 
     poetry run examples/client.py mytoken
+
+### Vault
+
+Test with:
+
+    ./examples/certificates/generate.sh
+    export OIDC_ACCESS_TOKEN=<token>
+    poetry install --group examples --extras
+    poetry run examples/vault_server.py <vault_server>
+    poetry run examples/client.py <token>
