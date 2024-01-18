@@ -6,19 +6,27 @@ import ai4flwr.auth.vault as vault
 
 import flwr as fl
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
     print("Error, No Deployment ID provided!!!")
-    print(f"Usage: {sys.argv[0]} <deployment_id>")
+    print(f"Usage: {sys.argv[0]} <deployment_id> <vault_server>")
     sys.exit(1)
 
-if os.getenv("OIDC_ACCESS_TOKEN") is None:
+oidc_access_token = os.getenv("OIDC_ACCESS_TOKEN")
+
+if oidc_access_token is None:
     print("Error, No OIDC_ACCESS_TOKEN variable provided!!!")
     sys.exit(1)
 
-interceptor = vault.VaultBearerTokenInterceptor(
-    vault_addr="https://vault.services.fedcloud.eu:8200",
+deployment_id = sys.argv[1]
+vault_server = sys.argv[2]
+
+user_id = vault.get_user_id(oidc_access_token)
+secret_path = f"users/{user_id}/deployments/{deployment_id}/federated/"
+
+interceptor = vault.OIDCVaultBearerTokenInterceptor(
+    vault_addr=vault_server,
     oidc_access_token=os.getenv("OIDC_ACCESS_TOKEN"),
-    deployment_id=sys.argv[1],
+    secret_path=secret_path,
 )
 
 
