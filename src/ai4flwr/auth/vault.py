@@ -121,7 +121,7 @@ class OIDCVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
         # Print debug info
         response = self._client.auth.token.lookup_self()
         ttl = response.get("data").get("ttl")
-        log(INFO, "Vault token is valid for: '%d'", ttl)
+        log(INFO, "Vault token is valid for %d seconds", ttl)
 
 
 def get_user_id(token: str) -> str:
