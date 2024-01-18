@@ -27,8 +27,8 @@ import jwt
 from ai4flwr.auth import bearer
 
 
-class VaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
-    """Vault Bearer token interceptor.
+class OIDCVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
+    """Vault Bearer token interceptor with OIDC authentication.
 
     This class will retrieve the list of tokens from Vault, and will
     authenticate the call if the token is on the list.
@@ -38,16 +38,21 @@ class VaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
         self,
         vault_addr: str,
         oidc_access_token: str,
-        deployment_id: str,
         vault_role: typing.Optional[str] = "",
         vault_auth_path: typing.Optional[str] = "jwt",
         vault_mountpoint: typing.Optional[str] = "/secrets/",
+        secret_path: typing.Optional[str] = "federated",
     ):
         """Initialize VaultBearerTokenInterceptor.
 
         :param vault_addr: Vault address
         :param oidc_access_token: OIDC access token to authenticate with Vault
-        :param de
+        :param vault_role: Vault role to use for authentication
+        :param vault_auth_path: Vault authentication path
+        :param vault_mountpoint: Vault mountpoint
+        :param secret_path: Vault path to read tokens from. We will look for secrets
+                            stored under that path, if they contain a "token" key, that
+                            will be used as bearer tokens.
         """
 
         # FIXME(aloga): the token will expire after some time, we should
@@ -64,26 +69,15 @@ class VaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
         # FIXME(aloga): can we use v2 and configure the mountpoint?
         self._vault_mountpoint = vault_mountpoint
 
-        user_id = self._get_user_id(oidc_access_token)
-
-        home_path = f"users/{user_id}/"
-        self._vault_path = f"{home_path}/deployments/{deployment_id}/federated/"
+        self._secret_path = secret_path
 
         log(INFO, "Configured Vault Bearer token authentication with: '%s'", vault_addr)
-        log(INFO, "Reading tokens stored in: '%s'", self._vault_path)
+        log(INFO, "Reading tokens stored in: '%s'", self._secret_path)
         try:
             log(INFO, "Configured Vault Bearer tokens: '%s'", self.tokens)
         except Exception as e:
             log(ERROR, "Error reading tokens from Vault: '%s'", e)
             raise
-
-    def _get_user_id(self, token: str) -> str:
-        try:
-            payload = jwt.decode(token, options={"verify_signature": False})
-            return payload.get("sub")
-        except (jwt.InvalidTokenError, jwt.ExpiredSignatureError) as e:
-            log(ERROR, "Invalid OIDC token: '%s'", token)
-            raise e
 
     # FIXME(aloga): this should be cached, but we need to invalidate the cache
     # when a new token is added or a new token is removed. Morever, since authentication
@@ -96,10 +90,10 @@ class VaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
 
         :returns: list of tokens
         """
-        print("Getting tokens from Vault -> ", self._vault_path)
+        print("Getting tokens from Vault -> ", self._secret_path)
         response = self._client.secrets.kv.list_secrets(
             mount_point=self._vault_mountpoint,
-            path=self._vault_path,
+            path=self._secret_path,
         )
         secrets = response.get("data", {}).get("keys", [])
 
@@ -107,9 +101,18 @@ class VaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
         for s in secrets:
             secret = self._client.secrets.kv.read_secret(
                 mount_point=self._vault_mountpoint,
-                path=f"{self._vault_path}/{s}",
+                path=f"{self._secret_path}/{s}",
             )
             token = secret.get("data", {}).get("token")
             if token:
                 tokens.append(token)
         return tokens
+
+
+def get_user_id(token: str) -> str:
+    try:
+        payload = jwt.decode(token, options={"verify_signature": False})
+        return payload.get("sub")
+    except (jwt.InvalidTokenError, jwt.ExpiredSignatureError) as e:
+        log(ERROR, "Invalid OIDC token: '%s'", token)
+        raise e
