@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-flwr = "^1.6.0"
+flwr = {git = "https://github.com/AI4EOSC/flower.git", rev = "ai4eosc/credentials"}
 grpcio = "^1.60.0"
 
 
