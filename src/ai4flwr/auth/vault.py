@@ -108,6 +108,21 @@ class OIDCVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor):
                 tokens.append(token)
         return tokens
 
+    def renew(
+        self,
+        increment: typing.Optional[str] = "768h",
+    ):
+        """ Renew the Vault token, increase its validity to the duration given in the increment parameter.
+
+        :param increment: Renew duration, e.g. ’15s’, ‘20m’, ‘25h’.
+        """
+        self._client.auth.token.renew_self(increment=increment)
+
+        # Print debug info
+        response = self._client.auth.token.lookup_self()
+        ttl = response.get("data").get("ttl")
+        log(INFO, "Vault token is valid for %d seconds", ttl)
+
 
 def get_user_id(token: str) -> str:
     try:
