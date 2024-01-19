@@ -40,7 +40,7 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
         def abort(ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
 
-        self._abortion = grpc.unary_unary_rpc_method_handler(abort)
+        self._abortion = grpc.stream_stream_rpc_method_handler(abort)
 
     def intercept_service(self, continuation, handler_call_details):
         """Intercept incoming RPCs checking that the provided token is correct.
