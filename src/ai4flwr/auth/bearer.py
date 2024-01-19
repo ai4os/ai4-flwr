@@ -28,11 +28,8 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
     """GRPC Server interceptor implementing Bearer token authentication."""
 
     def __init__(
-        self,
-        *tokens: typing.Optional[str],
-        file: typing.Optional[str] = None
+        self, *tokens: typing.Optional[str], file: typing.Optional[str] = None
     ) -> None:
-
         """Create a BearerTokenInterceptor object.
 
         :param *tokens: One or more strings containing the Bearer tokens that will grant
