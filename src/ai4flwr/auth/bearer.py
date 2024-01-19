@@ -59,7 +59,7 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
 
         auth_token = None
         for kv in handler_call_details.invocation_metadata:
-            if kv.key == "authorization":
+            if kv.key == "x-authorization":
                 auth_token = kv.value
                 break
 
@@ -88,6 +88,8 @@ class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
         self.token: str = token
         log(INFO, "Created AuthMetadataPlugin with token: %s", self.token)
 
+        super(self.__class__, self).__init__()
+
     def __call__(self, context, callback):
         """Implement authentication by passing metadata to a callback.
 
@@ -96,4 +98,11 @@ class BearerTokenAuthPlugin(grpc.AuthMetadataPlugin):
         :callback: An AuthMetadataPluginCallback to be invoked either synchronously or
                    asynchronously.
         """
-        callback((("authorization", "Bearer " + self.token),), None)
+        callback((("x-authorization", "Bearer " + self.token),), None)
+
+    def call_credentials(self):
+        """Return a CallCredentials object for this plugin.
+
+        :call_credentials: A CallCredentials object.
+        """
+        return grpc.metadata_call_credentials(self)
