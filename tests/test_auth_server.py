@@ -17,6 +17,8 @@
 """Tests for GRPC Authentication classes for Flower server."""
 
 import collections
+import os
+import signal
 
 import pytest
 
@@ -41,7 +43,7 @@ def mock_handler_call_details_authenticated():
     return MockHandlerCallDetais(
         "Authenticated",
         [
-            InvocationMetadata("authorization", "Bearer foobar"),
+            InvocationMetadata("x-authorization", "Bearer foobar"),
         ]
     )
 
@@ -54,9 +56,8 @@ def continuation():
 
 
 def test_empty_token():
-    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
-    assert isinstance(interceptor.tokens[0], str)
-    assert len(interceptor.tokens[0]) == 64
+    with pytest.raises(ValueError):
+        ai4flwr.auth.bearer.BearerTokenInterceptor()
 
 
 def test_provided_token():
@@ -77,9 +78,9 @@ def test_provided_various_tokens():
 
 
 def test_unauthenticated(mock_handler_call_details_unauthenticated, continuation):
-    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("foobar")
     assert isinstance(interceptor.tokens[0], str)
-    assert len(interceptor.tokens[0]) == 64
+    assert len(interceptor.tokens[0]) == 6
 
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_unauthenticated)
@@ -87,9 +88,9 @@ def test_unauthenticated(mock_handler_call_details_unauthenticated, continuation
 
 
 def test_authenticated_not_ok(mock_handler_call_details_authenticated, continuation):
-    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor()
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor("foobarbaz")
     assert isinstance(interceptor.tokens[0], str)
-    assert len(interceptor.tokens[0]) == 64
+    assert len(interceptor.tokens[0]) == 9
 
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_authenticated)
@@ -112,3 +113,42 @@ def test_authenticated_ok2(mock_handler_call_details_authenticated, continuation
     ret = interceptor.intercept_service(continuation,
                                         mock_handler_call_details_authenticated)
     assert ret == "Ok"
+
+
+def test_load_tokens(tmpdir):
+    p = tmpdir.mkdir("sub").join("hello.txt")
+    p.write("foobar\nbarbaz\n")
+
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor(file=str(p))
+    assert isinstance(interceptor.tokens[0], str)
+    assert isinstance(interceptor.tokens[1], str)
+    assert len(interceptor.tokens[0]) == 6
+    assert len(interceptor.tokens[1]) == 6
+    assert interceptor.tokens[0] == "foobar"
+    assert interceptor.tokens[1] == "barbaz"
+
+def test_reload_tokens(tmpdir):
+    p = tmpdir.mkdir("sub").join("hello.txt")
+    p.write("foobar\nbarbaz\n")
+
+    interceptor = ai4flwr.auth.bearer.BearerTokenInterceptor(file=str(p))
+    assert isinstance(interceptor.tokens[0], str)
+    assert isinstance(interceptor.tokens[1], str)
+    assert len(interceptor.tokens[0]) == 6
+    assert len(interceptor.tokens[1]) == 6
+    assert interceptor.tokens[0] == "foobar"
+    assert interceptor.tokens[1] == "barbaz"
+
+    p.write("foobar\nbarbaz\nfoobarbaz\n")
+    pid = os.getpid()
+    os.kill(pid, signal.SIGUSR1)
+
+    assert isinstance(interceptor.tokens[0], str)
+    assert isinstance(interceptor.tokens[1], str)
+    assert isinstance(interceptor.tokens[2], str)
+    assert len(interceptor.tokens[0]) == 6
+    assert len(interceptor.tokens[1]) == 6
+    assert len(interceptor.tokens[2]) == 9
+    assert interceptor.tokens[0] == "foobar"
+    assert interceptor.tokens[1] == "barbaz"
+    assert interceptor.tokens[2] == "foobarbaz"
