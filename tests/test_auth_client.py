@@ -30,7 +30,7 @@ def mock_context():
 def mock_callback():
     def _callback(metadata, error):
         meta = metadata[0]
-        assert meta[0] == "authorization"
+        assert meta[0] == "x-authorization"
         assert meta[1] == "Bearer foobar"
 
     return _callback
