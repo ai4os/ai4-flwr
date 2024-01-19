@@ -17,7 +17,7 @@
 """Bearer token authentication for Flower server."""
 
 from logging import ERROR, INFO
-import secrets
+import signal
 import typing
 
 from flwr.common.logger import log
@@ -27,20 +27,59 @@ import grpc
 class BearerTokenInterceptor(grpc.ServerInterceptor):
     """GRPC Server interceptor implementing Bearer token authentication."""
 
-    def __init__(self, *tokens: typing.Optional[str]):
+    def __init__(
+        self,
+        *tokens: typing.Optional[str],
+        file: typing.Optional[str] = None
+    ) -> None:
+
         """Create a BearerTokenInterceptor object.
 
         :param *tokens: One or more strings containing the Bearer tokens that will grant
-                        access to the client. If a token is not provided, we will create
-                        a random 32 bytes hexadecimal string.
+                        access to the client.
+
+        :param file: A string containing the path to a file containing the Bearer
+                     tokens. Please note that the file must contain one token per line
+                     and that you cannot use both tokens and file at the same time.
         """
-        self.tokens = [t for t in tokens] or [secrets.token_hex(32)]
+        if not tokens and not file:
+            raise ValueError("Must provide either tokens or file")
+
+        if tokens and file:
+            raise ValueError("Cannot provide both tokens and file")
+
+        if tokens:
+            self.tokens = [t for t in tokens]
+            self._file = None
+
+        if file:
+            self._file = file
+            self.tokens = self._read_tokens_from_file()
+            self._signal_handler = signal.signal(signal.SIGUSR1, self._handle_signal)
+
         log(INFO, "Configured Bearer token authentication with: '%s'", self.tokens)
 
         def abort(ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
 
         self._abortion = grpc.stream_stream_rpc_method_handler(abort)
+
+    def _handle_signal(self, signum, frame):
+        """Handle signals and reload tokens."""
+        if not self._file:
+            return
+        log(INFO, "Received SIGUSR1, reloading tokens from file")
+        self.tokens = self._read_tokens_from_file()
+        log(INFO, "Reloaded Bearer token authentication with: '%s'", self.tokens)
+
+    def _read_tokens_from_file(self) -> typing.List[str]:
+        """Read the tokens from the file."""
+        tokens = []
+        with open(self._file, "r") as f:
+            for line in f:
+                if line:
+                    tokens.append(line.strip())
+        return tokens
 
     def intercept_service(self, continuation, handler_call_details):
         """Intercept incoming RPCs checking that the provided token is correct.
