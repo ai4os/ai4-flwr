@@ -36,7 +36,12 @@ In your server, start it as follows:
         interceptors=[ai4flwr.auth.bearer.BearerTokenInterceptor()]
     )
 
-In your client, start it as follows:
+Alternatively, you can pass the tokens inside a text file and use the `file`
+keyword argument. The file must contain one token per line, empty lines are
+ignored. If the file is updated, you can send `SIGUSR1` fo the server process,
+and the tokens will be reloaded from disk.
+
+Then, in your client, start it as follows:
 
     import ai4flwr.auth.bearer
 
