@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-"""GRPC Authentication classes for Flower server."""
+"""Bearer token authentication for Flower server."""
 
 from logging import ERROR, INFO
 import secrets
