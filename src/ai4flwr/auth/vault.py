@@ -49,6 +49,20 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
         vault_mountpoint: typing.Optional[str] = "/secrets/",
         secret_path: typing.Optional[str] = "federated",
     ):
+        """Initialize a Vault Bearer Token Interceptor.
+
+        Objects from this class will authenticate calls using the tokens that
+        are stored in the given Vault path.
+
+        This is an abstract class, and should be subclassed to implement the
+        authentication method. Subclasses should set the _client attribute
+        to a valid Vault client before calling the parent __init__ method.
+
+        :param vault_mountpoint: Vault mountpoint
+        :param secret_path: Vault path to read tokens from. We will look for secrets
+                            stored under that path, if they contain a "token" key, that
+                            will be used as bearer tokens.
+        """
         if self._client is None:
             raise ValueError("Vault client is not initialized")
 
@@ -112,7 +126,7 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
             response = self._client.auth.token.lookup_self()
             ttl = response.get("data").get("ttl")
             log(DEBUG, "Vault token is valid for %d seconds", ttl)
-            log(DEBUG, "Vault token will be renewed in %d secods", ttl/2)
+            log(DEBUG, "Vault token will be renewed in %d secods", ttl / 2)
 
             # Sleep for half the duration of the token
             await asyncio.sleep(ttl / 2)
@@ -176,7 +190,6 @@ class OIDCVaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
                             stored under that path, if they contain a "token" key, that
                             will be used as bearer tokens.
         """
-
         self._client = hvac.Client(url=vault_addr)
         self._client.auth.jwt.jwt_login(
             role=vault_role, jwt=oidc_access_token, path=vault_auth_path
@@ -189,6 +202,11 @@ class OIDCVaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
 
 
 def get_user_id(token: str) -> str:
+    """Retrieve user ID from OIDC JWT token.
+
+    :param token: OIDC token as a string
+    :returns: user ID
+    """
     try:
         payload = jwt.decode(token, options={"verify_signature": False})
         return payload.get("sub")
