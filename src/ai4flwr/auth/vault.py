@@ -17,8 +17,9 @@
 """Authentication for Flower server, using Vault secrets as Bearer tokens."""
 
 import abc
+import asyncio
 import functools
-from logging import ERROR, INFO
+import logging
 import typing
 
 from flwr.common.logger import log
@@ -26,6 +27,10 @@ import hvac
 import jwt
 
 from ai4flwr.auth import bearer
+
+INFO = logging.INFO
+DEBUG = logging.DEBUG
+ERROR = logging.ERROR
 
 
 class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
@@ -62,6 +67,8 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
             log(ERROR, "Error reading tokens from Vault: '%s'", e)
             raise
 
+        asyncio.run(self.renew())
+
     # FIXME(aloga): this should be cached, but we need to invalidate the cache
     # when a new token is added or a new token is removed.
     @functools.cached_property
@@ -88,18 +95,27 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
                 tokens.append(token)
         return tokens
 
-    async def renew(self, increment: typing.Optional[str] = "768h"):
-        """Renew the Vault token, increase its validity to the duration given in the
-        increment parameter.
+    async def renew(self, increment: typing.Optional[str] = "12h"):
+        """Renew the Vault token.
+
+        This corouting will increase the token validity to the duration given in the
+        increment parameter. It will schedule itself to run every half the duration
+        of the token obtained.
 
         :param increment: Renew duration, e.g. ’15s’, ‘20m’, ‘25h’.
         """
-        self._client.auth.token.renew_self(increment=increment)
+        while True:
+            log(DEBUG, "Renewing Vault token...")
+            self._client.auth.token.renew_self(increment=increment)
 
-        # Print debug info
-        response = self._client.auth.token.lookup_self()
-        ttl = response.get("data").get("ttl")
-        log(INFO, "Vault token is valid for %d seconds", ttl)
+            # Print debug info
+            response = self._client.auth.token.lookup_self()
+            ttl = response.get("data").get("ttl")
+            log(DEBUG, "Vault token is valid for %d seconds", ttl)
+            log(DEBUG, "Vault token will be renewed in %d secods", ttl/2)
+
+            # Sleep for half the duration of the token
+            await asyncio.sleep(ttl / 2)
 
 
 class VaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
