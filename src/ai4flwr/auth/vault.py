@@ -47,7 +47,7 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
     def __init__(
         self,
         vault_mountpoint: typing.Optional[str] = "/secrets/",
-        secret_path: typing.Optional[str] = "federated",
+        secret_path: typing.Optional[str] = "federated",  # nosec
     ):
         """Initialize a Vault Bearer Token Interceptor.
 
@@ -144,7 +144,7 @@ class VaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
         vault_addr: str,
         vault_token: str,
         vault_mountpoint: typing.Optional[str] = "/secrets/",
-        secret_path: typing.Optional[str] = "federated",
+        secret_path: typing.Optional[str] = "federated",  # nosec
     ):
         """Initialize VaultBearerTokenInterceptor.
 
@@ -177,7 +177,7 @@ class OIDCVaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
         vault_role: typing.Optional[str] = "",
         vault_auth_path: typing.Optional[str] = "jwt",
         vault_mountpoint: typing.Optional[str] = "/secrets/",
-        secret_path: typing.Optional[str] = "federated",
+        secret_path: typing.Optional[str] = "federated",  # nosec
     ):
         """Initialize VaultBearerTokenInterceptor.
 
