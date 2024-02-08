@@ -58,10 +58,10 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
 
         self._abortion = grpc.stream_stream_rpc_method_handler(self._abort_grpc)
 
-    def _abort_grpc(self, ignored_request, context)
+    def _abort_grpc(self, ignored_request, context):
         """Abort the request in case of invalid token."""
         context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
-        
+
     def _handle_signal(self, signum, frame):
         """Handle signals and reload tokens."""
         if not self._file:
