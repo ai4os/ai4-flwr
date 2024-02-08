@@ -74,8 +74,6 @@ class Client(fl.client.NumPyClient):
 
 auth_plugin = ai4flwr.auth.bearer.BearerTokenAuthPlugin(token)
 
-import grpc
-
 
 fl.client.start_numpy_client(
     server_address="localhost:5000",

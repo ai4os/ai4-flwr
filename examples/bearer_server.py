@@ -3,8 +3,6 @@ import sys
 
 import ai4flwr.auth.bearer as bearer
 
-from logging import ERROR, INFO
-
 import flwr as fl
 
 FEDERATED_METRIC = "accuracy"
@@ -16,13 +14,14 @@ if len(sys.argv) != 2:
 
 interceptor = bearer.BearerTokenInterceptor(sys.argv[1])
 
+
 def wavg_metric(metrics):
     global FEDERATED_METRIC
     list_metrics = []
     try:
         list_metrics = ast.literal_eval(FEDERATED_METRIC)
     except ValueError:
-        log(INFO, "Only one metric has been entered.")
+        print("Only one metric has been entered.")
     if len(list_metrics) == 0:
         n = sum([i for i, _ in metrics])
         wavg_metric = sum([i * metric[FEDERATED_METRIC] / n for i, metric in metrics])
