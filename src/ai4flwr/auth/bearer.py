@@ -56,11 +56,12 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
 
         log(INFO, "Configured Bearer token authentication with: '%s'", self.tokens)
 
-        def abort(ignored_request, context):
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
+        self._abortion = grpc.stream_stream_rpc_method_handler(self._abort_grpc)
 
-        self._abortion = grpc.stream_stream_rpc_method_handler(abort)
-
+    def _abort_grpc(self, ignored_request, context)
+        """Abort the request in case of invalid token."""
+        context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid token")
+        
     def _handle_signal(self, signum, frame):
         """Handle signals and reload tokens."""
         if not self._file:
@@ -72,11 +73,13 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
     def _read_tokens_from_file(self) -> typing.List[str]:
         """Read the tokens from the file."""
         tokens = []
-        with open(self._file, "r") as f:
-            for line in f:
-                if line:
-                    tokens.append(line.strip())
-        return tokens
+        try:
+            with open(self._file, "r") as f:
+                tokens = [fine.strip() for line in f if line.strip()]
+            return tokens
+        except FileNotFoundError:
+            log(ERROR, "File not found '%s'", self._file)
+            return tokens
 
     def intercept_service(self, continuation, handler_call_details):
         """Intercept incoming RPCs checking that the provided token is correct.
