@@ -113,23 +113,17 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
         """Renew the Vault token.
 
         This corouting will increase the token validity to the duration given in the
-        increment parameter. It will schedule itself to run every half the duration
-        of the token obtained.
+        increment parameter.
 
         :param increment: Renew duration, e.g. ’15s’, ‘20m’, ‘25h’.
         """
-        while True:
-            log(DEBUG, "Renewing Vault token...")
-            self._client.auth.token.renew_self(increment=increment)
+        log(DEBUG, "Renewing Vault token...")
+        self._client.auth.token.renew_self(increment=increment)
 
-            # Print debug info
-            response = self._client.auth.token.lookup_self()
-            ttl = response.get("data").get("ttl")
-            log(DEBUG, "Vault token is valid for %d seconds", ttl)
-            log(DEBUG, "Vault token will be renewed in %d secods", ttl / 2)
-
-            # Sleep for half the duration of the token
-            await asyncio.sleep(ttl / 2)
+        # Print debug info
+        response = self._client.auth.token.lookup_self()
+        ttl = response.get("data").get("ttl")
+        log(DEBUG, "Vault token is valid for %d seconds", ttl)
 
 
 class VaultBearerTokenInterceptor(BaseVaultBearerTokenInterceptor):
