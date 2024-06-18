@@ -81,7 +81,7 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
             log(ERROR, "Error reading tokens from Vault: '%s'", e)
             raise
 
-        asyncio.run(self.renew())
+        asyncio.ensure_future(self.renew())
 
     # FIXME(aloga): this should be cached, but we need to invalidate the cache
     # when a new token is added or a new token is removed.
@@ -109,7 +109,7 @@ class BaseVaultBearerTokenInterceptor(bearer.BearerTokenInterceptor, abc.ABC):
                 tokens.append(token)
         return tokens
 
-    async def renew(self, increment: typing.Optional[str] = "12h"):
+    async def renew(self, increment: typing.Optional[str] = "24h"):
         """Renew the Vault token.
 
         This corouting will increase the token validity to the duration given in the
