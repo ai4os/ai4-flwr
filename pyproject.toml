@@ -61,10 +61,10 @@ twine = "^4.0.2"
 
 
 [tool.poetry.group.examples.dependencies]
-keras = "2.12.0"
-numpy = ">=1.26.0,<3.0.0"
+keras = ">2.12.0"
+tensorflow = ">2.12.0"
 flwr = {git = "https://github.com/AI4EOSC/flower.git", rev = "credentials"}
-tensorflow = ">2.12.0,"
+
 
 [build-system]
 requires = ["poetry-core"]
