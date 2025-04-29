@@ -74,7 +74,7 @@ class BearerTokenInterceptor(grpc.ServerInterceptor):
         tokens = []
         try:
             with open(self._file, "r") as f:
-                tokens = [fine.strip() for line in f if line.strip()]
+                tokens = [line.strip() for line in f if line.strip()]
             return tokens
         except FileNotFoundError:
             log(ERROR, "File not found '%s'", self._file)
